@@ -20,15 +20,13 @@ $range = $sheet.'!A:B';
 try {
     $response = $service->spreadsheets_values->get($spreadsheetId, $range);
     $values = limpiarYAjustarValores($response);
-
     $filtro = isset($_GET['filtrar']) && !empty($_GET['filtrar']) ? $_GET['filtrar'] : 10;
-
+    $chofer = isset($_GET['choferInicialHidden']) ? $_GET['choferInicialHidden'] : '';
     $usuario = isset($_GET['nombreUsuario']) ? $_GET['nombreUsuario'] : '';
-
-    $usuariosCercanos = $usuario == '' ? obtenerUsuariosCercanos($values, $filtro) : obtenerUsuario($values, $filtro, $usuario);
-
+    $usuariosCercanos = $usuario == '' ? obtenerUsuariosCercanos($values, $filtro) : obtenerUsuario($values, $filtro, $usuario, $chofer);
     $listaChoferes = obtenerNombresSinRepetir($values);
-    
+    $diferenciaEntreDosChoferes = calcularDiferenciaUsuarios($values, $chofer, $usuario);
+
     if (empty($values)) {
         echo "No data found.";
     } 
@@ -70,6 +68,7 @@ function limpiarYAjustarValores($response) {
     return $values;
 }
 function obtenerUsuariosCercanos($values,$filtro) {
+
     $lastTrueIndex = -1;
 
     // Encontrar el índice del último "true"
@@ -118,9 +117,10 @@ function obtenerUsuariosCercanos($values,$filtro) {
     return $usuariosCercanos;
 }
 
-function obtenerUsuario($values, $filtro, $usuario) {
-    if ($usuario === 'X') {
-        $usuario = 'MARIO MONTENEGRO';
+function obtenerUsuario($values, $filtro, $usuario,$chofer) {
+
+    if ($usuario === '') {
+        $usuario = $chofer;
     }
     $usuario = strtoupper(trim($usuario)); 
     $targetIndex = -1;
@@ -171,4 +171,35 @@ function obtenerNombresSinRepetir($values) {
         }
     }
     return $nombresSinRepetir;
+}
+
+function calcularDiferenciaUsuarios($values, $choferInicial, $usuario) {
+
+    if (empty($choferInicial) || empty($usuario)) {
+        return ""; // Si alguno de los valores está vacío, no se realiza el cálculo
+    }
+    
+    $indiceChoferInicial = -1;
+    $indiceUsuario = -1;
+
+    for ($i = count($values) - 1; $i >= 0; $i--) {
+        if ($indiceChoferInicial === -1 && isset($values[$i][1]) && $values[$i][1] === $choferInicial) {
+            $indiceChoferInicial = $i;
+        }
+
+        if ($indiceUsuario === -1 && isset($values[$i][1]) && $values[$i][1] === $usuario) {
+            $indiceUsuario = $i;
+        }
+
+        if ($indiceChoferInicial !== -1 && $indiceUsuario !== -1) {
+            break; // Ambos usuarios encontrados, no es necesario seguir buscando
+        }
+    }
+
+    if ($indiceChoferInicial !== -1 && $indiceUsuario !== -1) {
+        $diferencia = abs($indiceUsuario - $indiceChoferInicial);
+        return "Hay $diferencia choferes de diferencia entre $choferInicial y $usuario.";
+    } else {
+        return "No se encontraron ambos usuarios en la lista.";
+    }
 }
