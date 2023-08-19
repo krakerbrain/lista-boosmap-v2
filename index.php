@@ -3,6 +3,7 @@ require 'src/app.php';
 require 'partials/header.php';
 require 'partials/form.php'
 ?>
+
 <style>
 /* Establecer la altura fija de la tabla */
 .fixed-height-table {
@@ -37,7 +38,7 @@ if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
 }
 
 //usar alert en caso de que el filtro tenga -1
-if(isset($_GET['filtrar']) && $_GET['filtrar'] == -1){
+if (isset($_GET['filtrar']) && $_GET['filtrar'] == -1) {
     echo '<div class="alert alert-danger" role="alert">Se muestran todos los registros</div>';
 }
 ?>
@@ -51,7 +52,11 @@ if(isset($_GET['filtrar']) && $_GET['filtrar'] == -1){
                     // Verificar si el usuario en la fila actual es el usuario seleccionado
                     $selectedClass = $row['dato2'] === $usuario || $row['dato2'] === $_COOKIE['choferInicial'] ? 'table-dark' : '';
                     if (!empty($row['dato2'])) {
-                        echo "<tr class='$selectedClass'><td class='text-center'>" . $row['indice'] . "</td><td class='text-bg-primary text-center'>" . $icon . "</td><td>" . $row['dato2'] . "</td></tr>";
+                        echo "<tr class='$selectedClass'>
+                                <td class='text-center'>" . $row['indice'] . "</td>
+                                <td class='text-bg-primary text-center'>" . $icon . "</td>
+                                <td onclick='verDatos(\"" . $row['dato2'] . "\")'>" . $row['dato2'] . "</td>
+                            </tr>";
                     }
                 }
             } else {
@@ -60,4 +65,5 @@ if(isset($_GET['filtrar']) && $_GET['filtrar'] == -1){
         </tbody>
     </table>
 </div>
+
 <?php require 'partials/footer.php'; ?>

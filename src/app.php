@@ -1,7 +1,7 @@
 <?php
 
 require '../vendor/autoload.php';
-// require './newArray.php';
+
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
@@ -21,13 +21,13 @@ $range = $sheet . '!A:B';
 try {
     $response = $service->spreadsheets_values->get($spreadsheetId, $range);
 
-    //DESARROLLO
-    $jsonData = file_get_contents('datos.json');
-    $valuesFromJson = json_decode($jsonData, true);
-    $values = limpiarYAjustarValores($valuesFromJson);
+    // //DESARROLLO
+    // $jsonData = file_get_contents('datos.json');
+    // $valuesFromJson = json_decode($jsonData, true);
+    // $values = limpiarYAjustarValores($valuesFromJson);
 
     //PRODUCCION
-    // $values = limpiarYAjustarValores($response);
+    $values = limpiarYAjustarValores($response);
 
     if (isset($_GET['filtrar']) && !empty($_GET['filtrar'])) {
         $filtro = $_GET['filtrar'] != -1 ? $_GET['filtrar'] : count($values);
@@ -41,6 +41,8 @@ try {
     $valorCookie = $_COOKIE['choferInicial'];
 
     $diferenciaEntreDosChoferes = calcularDiferenciaUsuarios($values, $chofer, $usuario);
+
+
     $diferencia = isset($diferenciaEntreDosChoferes['diferencia']) ? $diferenciaEntreDosChoferes['diferencia'] : $filtro;
 
 
@@ -51,12 +53,8 @@ try {
         echo "No data found.";
     }
 } catch (Google\Service\Exception $e) {
-    // Registramos el error en el archivo de registro
     error_log("Error en la llamada a la API: " . $e->getMessage(), 0);
-
-    // Muestra un mensaje genérico para el cliente
     echo "Lo sentimos, ha ocurrido un error. Por favor, inténtalo de nuevo más tarde.";
-    // echo "Error en la llamada a la API: " . $e->getMessage();
 }
 
 function limpiarYAjustarValores($response)
@@ -65,9 +63,9 @@ function limpiarYAjustarValores($response)
     $values = [];
     $currentEmptyCells = 0; // Contador de celdas vacías al inicio
     //produccion
-    // foreach ($response->getValues() as $row) {
-    //desarrollo
-    foreach ($response as $row) {
+    foreach ($response->getValues() as $row) {
+        //desarrollo
+        // foreach ($response as $row) {
         if (empty($row[0])) {
             $currentEmptyCells++;
         } else {
@@ -136,9 +134,6 @@ function upAndDown($values, $filtro, $lastTrueIndex)
     return ($valores_total);
 }
 
-
-
-
 function obtenerNombresSinRepetir($values)
 {
     $nombresSinRepetir = array();
@@ -156,7 +151,6 @@ function obtenerNombresSinRepetir($values)
 
 function calcularDiferenciaUsuarios($values, $choferInicial, $usuario)
 {
-
     if (empty($choferInicial) || empty($usuario)) {
         return ""; // Si alguno de los valores está vacío, no se realiza el cálculo
     }
@@ -183,7 +177,6 @@ function calcularDiferenciaUsuarios($values, $choferInicial, $usuario)
         if ($indiceUsuario > $indiceChoferInicial) {
             return;
         } else {
-
             return array(
                 "diferencia" => $diferencia,
                 "choferInicial" => array("indice" => $indiceChoferInicial, "nombre" => $choferInicial),
