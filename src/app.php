@@ -1,6 +1,7 @@
 <?php
 
 require '../vendor/autoload.php';
+// require './newArray.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
@@ -15,36 +16,58 @@ date_default_timezone_set('America/Santiago');
 $today = date("d-m");
 $sheet = $today;
 // $sheet = '12-08';
-$range = $sheet.'!A:B';
+$range = $sheet . '!A:B';
 
 try {
     $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-    $values = limpiarYAjustarValores($response);
-    $filtro = isset($_GET['filtrar']) && !empty($_GET['filtrar']) ? $_GET['filtrar'] : 10;
+
+    //DESARROLLO
+    $jsonData = file_get_contents('datos.json');
+    $valuesFromJson = json_decode($jsonData, true);
+    $values = limpiarYAjustarValores($valuesFromJson);
+
+    //PRODUCCION
+    // $values = limpiarYAjustarValores($response);
+
+    if (isset($_GET['filtrar']) && !empty($_GET['filtrar'])) {
+        $filtro = $_GET['filtrar'] != -1 ? $_GET['filtrar'] : count($values);
+    } else {
+        $filtro = 10;
+    }
+
     $chofer = isset($_GET['choferInicialHidden']) ? $_GET['choferInicialHidden'] : '';
+
     $usuario = isset($_GET['nombreUsuario']) ? $_GET['nombreUsuario'] : '';
-    $usuariosCercanos = $usuario == '' ? obtenerUsuariosCercanos($values, $filtro) : obtenerUsuario($values, $filtro, $usuario, $chofer);
-    $listaChoferes = obtenerNombresSinRepetir($values);
+    $valorCookie = $_COOKIE['choferInicial'];
+
     $diferenciaEntreDosChoferes = calcularDiferenciaUsuarios($values, $chofer, $usuario);
+    $diferencia = isset($diferenciaEntreDosChoferes['diferencia']) ? $diferenciaEntreDosChoferes['diferencia'] : $filtro;
+
+
+    $usuariosCercanos = obtenerRegistrosSegunChofer($values, $diferencia, $valorCookie);
+    $listaChoferes = obtenerNombresSinRepetir($values);
 
     if (empty($values)) {
         echo "No data found.";
-    } 
+    }
 } catch (Google\Service\Exception $e) {
-     // Registramos el error en el archivo de registro
-     error_log("Error en la llamada a la API: " . $e->getMessage(), 0);
+    // Registramos el error en el archivo de registro
+    error_log("Error en la llamada a la API: " . $e->getMessage(), 0);
 
-     // Muestra un mensaje genérico para el cliente
-     echo "Lo sentimos, ha ocurrido un error. Por favor, inténtalo de nuevo más tarde.";
+    // Muestra un mensaje genérico para el cliente
+    echo "Lo sentimos, ha ocurrido un error. Por favor, inténtalo de nuevo más tarde.";
     // echo "Error en la llamada a la API: " . $e->getMessage();
 }
 
-function limpiarYAjustarValores($response) {
+function limpiarYAjustarValores($response)
+{
 
     $values = [];
     $currentEmptyCells = 0; // Contador de celdas vacías al inicio
-
-    foreach ($response->getValues() as $row) {
+    //produccion
+    // foreach ($response->getValues() as $row) {
+    //desarrollo
+    foreach ($response as $row) {
         if (empty($row[0])) {
             $currentEmptyCells++;
         } else {
@@ -67,99 +90,57 @@ function limpiarYAjustarValores($response) {
 
     return $values;
 }
-function obtenerUsuariosCercanos($values,$filtro) {
 
+function obtenerRegistrosSegunChofer($values, $filtro, $chofer)
+{
     $lastTrueIndex = -1;
 
-    // Encontrar el índice del último "true"
     for ($i = count($values) - 1; $i >= 0; $i--) {
-        if (isset($values[$i][0]) && $values[$i][0] === "TRUE") {
+        if ((isset($values[$i][1]) && $values[$i][1] === $chofer)) {
             $lastTrueIndex = $i;
             break;
         }
     }
 
-    $usuariosCercanos = array();
-
-    if ($lastTrueIndex !== -1) {
-        // Encontrar el índice del primer "false" después del último "true"
-        for ($i = $lastTrueIndex + 1; $i < count($values); $i++) {
-            if (isset($values[$i][0]) && $values[$i][0] === "FALSE") {
-                $startIndex = max(0, $i - $filtro);
-                $endIndex = min(count($values) - 1, $i + $filtro);
-
-                for ($j = $startIndex; $j <= $endIndex; $j++) {
-                    $usuariosCercanos[] = array(
-                        'indice' => $j + 1,
-                        'dato1' => isset($values[$j][0]) ? $values[$j][0] : '',
-                        'dato2' => isset($values[$j][1]) ? $values[$j][1] : '',
-                    );
-                }
+    if (isset($values[$lastTrueIndex][0]) && $values[$lastTrueIndex][0] === "TRUE") {
+        for ($i = count($values) - 1; $i >= 0; $i--) {
+            if ((isset($values[$i][0]) && $values[$i][0] === "TRUE")) {
+                $lastTrueIndex = $i + 1;
                 break;
             }
         }
-    }
-
-        // Si no se encontró ningún "false" después de "true", mostrar los últimos 10 registros
-        if (empty($usuariosCercanos)) {
-            $startIndex = max(0, $lastTrueIndex - 10);
-            $endIndex = min(count($values) - 1, $lastTrueIndex + 10);
-    
-            for ($j = $startIndex; $j <= $endIndex; $j++) {
-                $usuariosCercanos[] = array(
-                    'indice' => $j + 1,
-                    'dato1' => isset($values[$j][0]) ? $values[$j][0] : '',
-                    'dato2' => isset($values[$j][1]) ? $values[$j][1] : '',
-                );
-            }
-        }
-
-    return $usuariosCercanos;
-}
-
-function obtenerUsuario($values, $filtro, $usuario,$chofer) {
-
-    if ($usuario === '') {
-        $usuario = $chofer;
-    }
-    $usuario = strtoupper(trim($usuario)); 
-    $targetIndex = -1;
-   
-    // Encontrar el índice del último momento en que aparece el usuario
-    for ($i = count($values) - 1; $i >= 0; $i--) {
-        if (isset($values[$i][1]) && $values[$i][1] === $usuario) {
-            $targetIndex = $i;
-            break;
-        }
-    }
-    
-    if ($targetIndex !== -1) {
-        $startIndex = max(0, $targetIndex - $filtro);
-        
-        // Verificar si el usuario está marcado como "false"
-        if (isset($values[$targetIndex][0]) && $values[$targetIndex][0] === 'FALSE') {
-            // Mostrar solo los 5 registros posteriores
-            $endIndex = min(count($values) - 1, $targetIndex + 5);
-        } else {
-            $endIndex = min(count($values) - 1, $targetIndex + $filtro);
-        }
-
-        $usuariosCercanos = array();
-        for ($i = $startIndex; $i <= $endIndex; $i++) {
-            $usuariosCercanos[] = array(
-                'indice' => $i + 1,
-                'dato1' => isset($values[$i][0]) ? $values[$i][0] : '',
-                'dato2' => isset($values[$i][1]) ? $values[$i][1] : '',
-            );
-        }
-
-        return $usuariosCercanos;
+        return upAndDown($values, $filtro, $lastTrueIndex);
     } else {
-        return null; // No se encontró el usuario en el array
+        return upAndDown($values, $filtro, $lastTrueIndex);
     }
 }
 
-function obtenerNombresSinRepetir($values) {
+function upAndDown($values, $filtro, $lastTrueIndex)
+{
+    for ($i = max(0, $lastTrueIndex - $filtro); $i <= $lastTrueIndex - 1; $i++) {
+        $valores_total[] = [
+            'indice' => $i + 1,
+            'dato1' => $values[$i][0],
+            'dato2' => $values[$i][1],
+        ];
+    }
+
+    for ($i = $lastTrueIndex; $i < min(count($values), $lastTrueIndex + $filtro); $i++) {
+        $valores_total[] = [
+            'indice' => $i + 1,
+            'dato1' => $values[$i][0],
+            'dato2' => $values[$i][1],
+        ];
+    }
+
+    return ($valores_total);
+}
+
+
+
+
+function obtenerNombresSinRepetir($values)
+{
     $nombresSinRepetir = array();
 
     foreach ($values as $row) {
@@ -173,12 +154,13 @@ function obtenerNombresSinRepetir($values) {
     return $nombresSinRepetir;
 }
 
-function calcularDiferenciaUsuarios($values, $choferInicial, $usuario) {
+function calcularDiferenciaUsuarios($values, $choferInicial, $usuario)
+{
 
     if (empty($choferInicial) || empty($usuario)) {
         return ""; // Si alguno de los valores está vacío, no se realiza el cálculo
     }
-    
+
     $indiceChoferInicial = -1;
     $indiceUsuario = -1;
 
@@ -198,8 +180,17 @@ function calcularDiferenciaUsuarios($values, $choferInicial, $usuario) {
 
     if ($indiceChoferInicial !== -1 && $indiceUsuario !== -1) {
         $diferencia = abs($indiceUsuario - $indiceChoferInicial);
-        return "Hay $diferencia choferes de diferencia entre $choferInicial y $usuario.";
+        if ($indiceUsuario > $indiceChoferInicial) {
+            return;
+        } else {
+
+            return array(
+                "diferencia" => $diferencia,
+                "choferInicial" => array("indice" => $indiceChoferInicial, "nombre" => $choferInicial),
+                "usuario" => array("indice" => $indiceUsuario, "nombre" => $usuario)
+            );
+        }
     } else {
-        return "No se encontraron ambos usuarios en la lista.";
+        return array("error" => "No se encontraron ambos usuarios en la lista");
     }
 }

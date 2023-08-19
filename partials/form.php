@@ -17,7 +17,11 @@
         ?>
     </datalist>
     <label class="form-label mb-0" for="filtrar">Filtrar</label>
-    <input class="form-control" type="number" name="filtrar" id="filtrar" value="10" />
+    <div id="btnFiltrar"></div>
+    <input class="form-control" type="number" name="filtrar" id="filtrar"
+        value="<?php echo (isset($_GET['filtrar']) && $_GET['filtrar'] != -1) ? $_GET['filtrar'] : ''; ?>"
+        placeholder="Filtrar por cualquier número" />
+
     <input class="btn btn-primary" type="submit" value="Enviar" />
 </form>
 
@@ -37,7 +41,20 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('choferInicial').disabled = true;
         document.getElementById('bloquearDiv').style.display = 'block';
     }
+
+    let buttons = [10, 15, 20, 30, 50, 100, 'all'];
+
+    buttons.forEach(button => {
+        document.getElementById('btnFiltrar').innerHTML +=
+            `<buttton class="btn btn-outline-primary rounded-circle me-1" onclick="agregaFiltro(${button})"><span class="small">${button}</span></buttton>`
+    })
 });
+
+function agregaFiltro(filtro) {
+
+    document.getElementById('filtrar').value = filtro !== 'all' ? -1 : filtro;
+    document.getElementById('data-form').submit();
+}
 
 document.getElementById('data-form').addEventListener('submit', function(event) {
     // event.preventDefault(); // Evitar envío del formulario

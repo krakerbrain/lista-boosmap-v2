@@ -13,24 +13,49 @@ require 'partials/form.php'
 }
 </style>
 <?php
-if(isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
-    echo '<div class="alert alert-primary" role="alert">' . $diferenciaEntreDosChoferes . '</div>';
+if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
+    if (isset($diferenciaEntreDosChoferes["error"])) {
+        echo '<div class="alert alert-danger" role="alert">' . $diferenciaEntreDosChoferes["error"] . '</div>';
+    } else {
+        $diferencia = $diferenciaEntreDosChoferes["diferencia"];
+        $choferInicialIndice = $diferenciaEntreDosChoferes["choferInicial"]["indice"];
+        $choferInicialNombre = $diferenciaEntreDosChoferes["choferInicial"]["nombre"];
+        $usuarioIndice = $diferenciaEntreDosChoferes["usuario"]["indice"];
+        $usuarioNombre = $diferenciaEntreDosChoferes["usuario"]["nombre"];
+
+        if ($diferencia < 10) {
+            $alert = 'alert-danger';
+        } else if ($diferencia < 15) {
+            $alert = 'alert-warning';
+        } else {
+            $alert = 'alert-primary';
+        }
+
+        $mensajeDiferencia = "Hay {$diferencia} choferes de diferencia entre {$usuarioIndice}.- {$usuarioNombre} y {$choferInicialIndice}.- {$choferInicialNombre}.";
+        echo '<div class="alert ' . $alert . ' role="alert">' . $mensajeDiferencia . '</div>';
+    }
+}
+
+//usar alert en caso de que el filtro tenga -1
+if(isset($_GET['filtrar']) && $_GET['filtrar'] == -1){
+    echo '<div class="alert alert-danger" role="alert">Se muestran todos los registros</div>';
 }
 ?>
+
 <div class="fixed-height-table">
     <table class="table table-striped table-sm">
         <tbody>
             <?php if (isset($usuariosCercanos)) {
-                    foreach ($usuariosCercanos as $row) {
-                        $icon = $row['dato1'] == 'TRUE' ? '<i class="fa-solid fa-square-check"></i>' : '<i class="fa-solid fa-square"></i>';
-                        // Verificar si el usuario en la fila actual es el usuario seleccionado
-                        $selectedClass = $row['dato2'] === $usuario || $row['dato2'] === $chofer ? 'table-dark' : '';
-                        if (!empty($row['dato2'])) {
-                            echo "<tr class='$selectedClass'><td class='text-center'>" . $row['indice'] . "</td><td class='text-bg-primary text-center'>".$icon."</td><td>" . $row['dato2'] . "</td></tr>";
-                        }
+                foreach ($usuariosCercanos as $row) {
+                    $icon = $row['dato1'] == 'TRUE' ? '<i class="fa-solid fa-square-check"></i>' : '<i class="fa-solid fa-square"></i>';
+                    // Verificar si el usuario en la fila actual es el usuario seleccionado
+                    $selectedClass = $row['dato2'] === $usuario || $row['dato2'] === $_COOKIE['choferInicial'] ? 'table-dark' : '';
+                    if (!empty($row['dato2'])) {
+                        echo "<tr class='$selectedClass'><td class='text-center'>" . $row['indice'] . "</td><td class='text-bg-primary text-center'>" . $icon . "</td><td>" . $row['dato2'] . "</td></tr>";
                     }
-                } else {
-                    echo "<p>No se pudieron obtener los datos.</p>";
+                }
+            } else {
+                echo "<p>No se pudieron obtener los datos.</p>";
             } ?>
         </tbody>
     </table>
