@@ -32,16 +32,40 @@ function agregaFiltro(filtroButton) {
   document.getElementById("data-form").submit();
 }
 
-document.getElementById("data-form").addEventListener("submit", function (event) {
+document.getElementById("data-form").addEventListener("submit", async function (event) {
   // event.preventDefault(); // Evitar envío del formulario
 
   const choferInicial = document.getElementById("choferInicial").value;
   if (choferInicial) {
     document.cookie = `choferInicial=${choferInicial}; expires=Fri, 31 Dec 9999 23:59:59 GMT`;
+    await sendToServer(choferInicial);
     document.getElementById("choferInicial").disabled = true;
     document.getElementById("bloquearDiv").style.display = "block";
   }
 });
+
+async function sendToServer(chofer) {
+  const currentDate = new Date().toISOString();
+  const logEntry = {
+    chofer: chofer,
+    date: currentDate,
+  };
+
+  const response = await fetch("log.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(logEntry),
+  });
+
+  const result = await response.json();
+  if (result.success) {
+    console.log("Registro guardado exitosamente en el servidor.");
+  } else {
+    console.error("Error al guardar el registro:", result.error);
+  }
+}
 
 document.getElementById("bloquearCheckbox").addEventListener("click", function () {
   const choferInicial = document.getElementById("choferInicial");
