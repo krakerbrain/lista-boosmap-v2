@@ -21,32 +21,44 @@ $range = $sheet . '!A:B';
 try {
     $response = $service->spreadsheets_values->get($spreadsheetId, $range);
 
-    // //DESARROLLO
-    // $jsonData = file_get_contents('datos.json');
+    // Solo para Guardar los datos en un archivo JSON
+    // $values = $response->getValues();
+    // file_put_contents('21-08.json', json_encode($values));
+
+
+    //DESARROLLO
+    // $jsonData = file_get_contents('21-08.json');
     // $valuesFromJson = json_decode($jsonData, true);
     // $values = limpiarYAjustarValores($valuesFromJson);
 
+
     //PRODUCCION
     $values = limpiarYAjustarValores($response);
+    $filtro = "";
+    if (isset($_GET['filtrar']) && is_numeric($_GET['filtrar'])) {
+        $filtro = intval($_GET['filtrar']); // Convertir a entero
 
-    if (isset($_GET['filtrar']) && !empty($_GET['filtrar'])) {
-        $filtro = $_GET['filtrar'] != -1 ? $_GET['filtrar'] : count($values);
+        if ($filtro == -2) {
+            $filtro = 20;
+        } elseif ($filtro < 0) {
+            $filtro = count($values); // Valor negativo distinto de -2
+        }
     } else {
-        $filtro = 10;
+        $filtro = 10; // Si no se proporciona o no es un número válido
     }
 
-    $chofer = isset($_GET['choferInicialHidden']) ? $_GET['choferInicialHidden'] : '';
 
+    $chofer = isset($_GET['choferInicialHidden']) ? $_GET['choferInicialHidden'] : '';
     $usuario = isset($_GET['nombreUsuario']) ? $_GET['nombreUsuario'] : '';
     $valorCookie = $_COOKIE['choferInicial'];
 
     $diferenciaEntreDosChoferes = calcularDiferenciaUsuarios($values, $chofer, $usuario);
 
-
     $diferencia = isset($diferenciaEntreDosChoferes['diferencia']) ? $diferenciaEntreDosChoferes['diferencia'] : $filtro;
 
 
-    $usuariosCercanos = obtenerRegistrosSegunChofer($values, $diferencia, $valorCookie);
+    $obtenerRegistros = obtenerRegistrosSegunChofer($values, $diferencia, $valorCookie);
+    $usuariosCercanos = isset($_GET['filtrar']) && $_GET['filtrar'] == -2 ? array_slice($obtenerRegistros, -20) : $obtenerRegistros;
     $listaChoferes = obtenerNombresSinRepetir($values);
 
     if (empty($values)) {
@@ -64,8 +76,8 @@ function limpiarYAjustarValores($response)
     $currentEmptyCells = 0; // Contador de celdas vacías al inicio
     //produccion
     foreach ($response->getValues() as $row) {
-        //desarrollo
-        // foreach ($response as $row) {
+    //desarrollo
+    // foreach ($response as $row) {
         if (empty($row[0])) {
             $currentEmptyCells++;
         } else {
@@ -91,9 +103,11 @@ function limpiarYAjustarValores($response)
 
 function obtenerRegistrosSegunChofer($values, $filtro, $chofer)
 {
+
     $lastTrueIndex = -1;
 
     for ($i = count($values) - 1; $i >= 0; $i--) {
+
         if ((isset($values[$i][1]) && $values[$i][1] === $chofer)) {
             $lastTrueIndex = $i;
             break;
@@ -115,6 +129,9 @@ function obtenerRegistrosSegunChofer($values, $filtro, $chofer)
 
 function upAndDown($values, $filtro, $lastTrueIndex)
 {
+
+    $valores_total = [];
+
     for ($i = max(0, $lastTrueIndex - $filtro); $i <= $lastTrueIndex - 1; $i++) {
         $valores_total[] = [
             'indice' => $i + 1,
@@ -131,7 +148,7 @@ function upAndDown($values, $filtro, $lastTrueIndex)
         ];
     }
 
-    return ($valores_total);
+    return $valores_total;
 }
 
 function obtenerNombresSinRepetir($values)
@@ -178,7 +195,7 @@ function calcularDiferenciaUsuarios($values, $choferInicial, $usuario)
             return;
         } else {
             return array(
-                "diferencia" => $diferencia,
+                "diferencia" => $diferencia + 1,
                 "choferInicial" => array("indice" => $indiceChoferInicial, "nombre" => $choferInicial),
                 "usuario" => array("indice" => $indiceUsuario, "nombre" => $usuario)
             );

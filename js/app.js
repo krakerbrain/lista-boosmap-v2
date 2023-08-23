@@ -13,7 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("bloquearDiv").style.display = "block";
   }
 
-  let buttons = [10, 15, 20, 30, 50, 100, "all"];
+  let buttons = [10, 15, 20, 30, 50, 100, "all", "end"];
 
   buttons.forEach((button) => {
     document.getElementById(
@@ -23,7 +23,12 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function agregaFiltro(filtroButton) {
-  document.getElementById("filtrar").value = filtroButton !== "all" ? filtroButton : -1;
+  if (filtroButton === "all") {
+    filtroButton = -1;
+  } else if (filtroButton === "end") {
+    filtroButton = -2;
+  }
+  document.getElementById("filtrar").value = filtroButton;
   document.getElementById("data-form").submit();
 }
 

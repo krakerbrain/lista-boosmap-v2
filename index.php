@@ -5,20 +5,28 @@ require 'partials/form.php'
 ?>
 
 <style>
-/* Establecer la altura fija de la tabla */
-.fixed-height-table {
-    max-height: 500px;
-    /* Ajusta la altura según tus necesidades */
-    overflow-y: auto;
-    /* Agrega una barra de desplazamiento vertical si es necesario */
-}
+    /* Establecer la altura fija de la tabla */
+    .fixed-height-table {
+        max-height: 500px;
+        /* Ajusta la altura según tus necesidades */
+        overflow-y: auto;
+        /* Agrega una barra de desplazamiento vertical si es necesario */
+    }
+
+    /* Estilo personalizado para filas con fondo oscuro */
+    .custom-dark-row {
+        background-color: #343a40;
+        /* Define el color oscuro que deseas */
+        color: white;
+        /* Define el color del texto para mayor contraste */
+    }
 </style>
 <?php
 if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
     if (isset($diferenciaEntreDosChoferes["error"])) {
         echo '<div class="alert alert-danger" role="alert">' . $diferenciaEntreDosChoferes["error"] . '</div>';
     } else {
-        $diferencia = $diferenciaEntreDosChoferes["diferencia"];
+        $diferencia = $diferenciaEntreDosChoferes["diferencia"] - 2;
         $choferInicialIndice = $diferenciaEntreDosChoferes["choferInicial"]["indice"];
         $choferInicialNombre = $diferenciaEntreDosChoferes["choferInicial"]["nombre"];
         $usuarioIndice = $diferenciaEntreDosChoferes["usuario"]["indice"];
@@ -32,14 +40,18 @@ if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
             $alert = 'alert-primary';
         }
 
-        $mensajeDiferencia = "Hay {$diferencia} choferes de diferencia entre {$usuarioIndice}.- {$usuarioNombre} y {$choferInicialIndice}.- {$choferInicialNombre}.";
+        $mensajeDiferencia = "Hay {$diferencia} choferes esperando por salir entre {$usuarioIndice}.- {$usuarioNombre} y {$choferInicialIndice}.- {$choferInicialNombre}.";
         echo '<div class="alert ' . $alert . ' role="alert">' . $mensajeDiferencia . '</div>';
     }
 }
 
 //usar alert en caso de que el filtro tenga -1
-if (isset($_GET['filtrar']) && $_GET['filtrar'] == -1) {
-    echo '<div class="alert alert-danger" role="alert">Se muestran todos los registros</div>';
+if (isset($_GET['filtrar'])) {
+    if ($_GET['filtrar'] == -1) {
+        echo '<div class="alert alert-warning" role="alert">Se muestran todos los registros</div>';
+    } else if ($_GET['filtrar'] == -2) {
+        echo '<div class="alert alert-warning" role="alert">Se muestran los últimos 20 registros</div>';
+    }
 }
 ?>
 
