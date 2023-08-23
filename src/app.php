@@ -53,12 +53,12 @@ try {
     $valorCookie = $_COOKIE['choferInicial'];
 
     $diferenciaEntreDosChoferes = calcularDiferenciaUsuarios($values, $chofer, $usuario);
-
     $diferencia = isset($diferenciaEntreDosChoferes['diferencia']) ? $diferenciaEntreDosChoferes['diferencia'] : $filtro;
 
 
     $obtenerRegistros = obtenerRegistrosSegunChofer($values, $diferencia, $valorCookie);
     $usuariosCercanos = isset($_GET['filtrar']) && $_GET['filtrar'] == -2 ? array_slice($obtenerRegistros, -20) : $obtenerRegistros;
+
     $listaChoferes = obtenerNombresSinRepetir($values);
 
     if (empty($values)) {
@@ -76,8 +76,8 @@ function limpiarYAjustarValores($response)
     $currentEmptyCells = 0; // Contador de celdas vacías al inicio
     //produccion
     foreach ($response->getValues() as $row) {
-    //desarrollo
-    // foreach ($response as $row) {
+        //desarrollo
+        // foreach ($response as $row) {
         if (empty($row[0])) {
             $currentEmptyCells++;
         } else {
@@ -113,39 +113,46 @@ function obtenerRegistrosSegunChofer($values, $filtro, $chofer)
             break;
         }
     }
-
-    if (isset($values[$lastTrueIndex][0]) && $values[$lastTrueIndex][0] === "TRUE") {
-        for ($i = count($values) - 1; $i >= 0; $i--) {
-            if ((isset($values[$i][0]) && $values[$i][0] === "TRUE")) {
-                $lastTrueIndex = $i + 1;
-                break;
-            }
-        }
-        return upAndDown($values, $filtro, $lastTrueIndex);
+    if ($lastTrueIndex == -1) {
+        return array();
     } else {
-        return upAndDown($values, $filtro, $lastTrueIndex);
+
+        if (isset($values[$lastTrueIndex][0]) && $values[$lastTrueIndex][0] === "TRUE") {
+            for ($i = count($values) - 1; $i >= 0; $i--) {
+                if ((isset($values[$i][0]) && $values[$i][0] === "TRUE")) {
+                    $lastTrueIndex = $i + 1;
+                    break;
+                }
+            }
+            return upAndDown($values, $filtro, $lastTrueIndex);
+        } else {
+            return upAndDown($values, $filtro, $lastTrueIndex);
+        }
     }
 }
 
 function upAndDown($values, $filtro, $lastTrueIndex)
 {
-
     $valores_total = [];
 
     for ($i = max(0, $lastTrueIndex - $filtro); $i <= $lastTrueIndex - 1; $i++) {
-        $valores_total[] = [
-            'indice' => $i + 1,
-            'dato1' => $values[$i][0],
-            'dato2' => $values[$i][1],
-        ];
+        if (isset($values[$i][0]) && isset($values[$i][1])) {
+            $valores_total[] = [
+                'indice' => $i + 1,
+                'dato1' => $values[$i][0],
+                'dato2' => $values[$i][1],
+            ];
+        }
     }
 
     for ($i = $lastTrueIndex; $i < min(count($values), $lastTrueIndex + $filtro); $i++) {
-        $valores_total[] = [
-            'indice' => $i + 1,
-            'dato1' => $values[$i][0],
-            'dato2' => $values[$i][1],
-        ];
+        if (isset($values[$i][0]) && isset($values[$i][1])) {
+            $valores_total[] = [
+                'indice' => $i + 1,
+                'dato1' => $values[$i][0],
+                'dato2' => $values[$i][1],
+            ];
+        }
     }
 
     return $valores_total;
@@ -177,11 +184,11 @@ function calcularDiferenciaUsuarios($values, $choferInicial, $usuario)
 
     for ($i = count($values) - 1; $i >= 0; $i--) {
         if ($indiceChoferInicial === -1 && isset($values[$i][1]) && $values[$i][1] === $choferInicial) {
-            $indiceChoferInicial = $i;
+            $indiceChoferInicial = $i + 1;
         }
 
         if ($indiceUsuario === -1 && isset($values[$i][1]) && $values[$i][1] === $usuario) {
-            $indiceUsuario = $i;
+            $indiceUsuario = $i + 1;
         }
 
         if ($indiceChoferInicial !== -1 && $indiceUsuario !== -1) {

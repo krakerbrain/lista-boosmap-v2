@@ -35,7 +35,7 @@ function agregaFiltro(filtroButton) {
 document.getElementById("data-form").addEventListener("submit", async function (event) {
   // event.preventDefault(); // Evitar envío del formulario
 
-  const choferInicial = document.getElementById("choferInicial").value;
+  const choferInicial = document.getElementById("choferInicial").value.toUpperCase();
   if (choferInicial) {
     document.cookie = `choferInicial=${choferInicial}; expires=Fri, 31 Dec 9999 23:59:59 GMT`;
     await sendToServer(choferInicial);

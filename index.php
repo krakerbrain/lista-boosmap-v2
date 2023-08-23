@@ -5,21 +5,13 @@ require 'partials/form.php'
 ?>
 
 <style>
-    /* Establecer la altura fija de la tabla */
-    .fixed-height-table {
-        max-height: 500px;
-        /* Ajusta la altura según tus necesidades */
-        overflow-y: auto;
-        /* Agrega una barra de desplazamiento vertical si es necesario */
-    }
-
-    /* Estilo personalizado para filas con fondo oscuro */
-    .custom-dark-row {
-        background-color: #343a40;
-        /* Define el color oscuro que deseas */
-        color: white;
-        /* Define el color del texto para mayor contraste */
-    }
+/* Establecer la altura fija de la tabla */
+.fixed-height-table {
+    max-height: 500px;
+    /* Ajusta la altura según tus necesidades */
+    overflow-y: auto;
+    /* Agrega una barra de desplazamiento vertical si es necesario */
+}
 </style>
 <?php
 if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
@@ -58,7 +50,7 @@ if (isset($_GET['filtrar'])) {
 <div class="fixed-height-table">
     <table class="table table-striped table-sm">
         <tbody>
-            <?php if (isset($usuariosCercanos)) {
+            <?php if (isset($usuariosCercanos) && !empty($usuariosCercanos)) {
                 foreach ($usuariosCercanos as $row) {
                     $icon = $row['dato1'] == 'TRUE' ? '<i class="fa-solid fa-square-check"></i>' : '<i class="fa-solid fa-square"></i>';
                     // Verificar si el usuario en la fila actual es el usuario seleccionado
@@ -72,7 +64,7 @@ if (isset($_GET['filtrar'])) {
                     }
                 }
             } else {
-                echo "<p>No se pudieron obtener los datos.</p>";
+                echo "<p>No se pudieron obtener los datos. Revisar el nombre del usuario</p>";
             } ?>
         </tbody>
     </table>
