@@ -5,13 +5,13 @@ require 'partials/form.php'
 ?>
 
 <style>
-/* Establecer la altura fija de la tabla */
-.fixed-height-table {
-    max-height: 500px;
-    /* Ajusta la altura según tus necesidades */
-    overflow-y: auto;
-    /* Agrega una barra de desplazamiento vertical si es necesario */
-}
+    /* Establecer la altura fija de la tabla */
+    .fixed-height-table {
+        max-height: 500px;
+        /* Ajusta la altura según tus necesidades */
+        overflow-y: auto;
+        /* Agrega una barra de desplazamiento vertical si es necesario */
+    }
 </style>
 <?php
 if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
@@ -19,9 +19,9 @@ if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
         echo '<div class="alert alert-danger" role="alert">' . $diferenciaEntreDosChoferes["error"] . '</div>';
     } else {
         $diferencia = $diferenciaEntreDosChoferes["diferencia"] - 2;
-        $choferInicialIndice = $diferenciaEntreDosChoferes["choferInicial"]["indice"];
+        $choferInicialIndice = $diferenciaEntreDosChoferes["choferInicial"]["indice"] + 1;
         $choferInicialNombre = $diferenciaEntreDosChoferes["choferInicial"]["nombre"];
-        $usuarioIndice = $diferenciaEntreDosChoferes["usuario"]["indice"];
+        $usuarioIndice = $diferenciaEntreDosChoferes["usuario"]["indice"] + 1;
         $usuarioNombre = $diferenciaEntreDosChoferes["usuario"]["nombre"];
 
         if ($diferencia < 10) {
@@ -44,6 +44,10 @@ if (isset($_GET['filtrar'])) {
     } else if ($_GET['filtrar'] == -2) {
         echo '<div class="alert alert-warning" role="alert">Se muestran los últimos 20 registros</div>';
     }
+}
+
+if ($encuentraChofer == -1) {
+    echo '<div class="alert alert-warning" role="alert"><small>Usuario no existe en la lista. Revisar el nombre de usuario o verificar si fue agregado</small></div>';
 }
 ?>
 
