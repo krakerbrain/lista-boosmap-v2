@@ -50,39 +50,43 @@ try {
         $values = limpiarYAjustarValores($resp);
     }
 
-
-
     $chofer = isset($_GET['choferInicialHidden']) ? $_GET['choferInicialHidden'] : '';
     $usuario = isset($_GET['nombreUsuario']) ? $_GET['nombreUsuario'] : '';
     $valorCookie = $_COOKIE['choferInicial'];
     $filtro = "";
-    $getDataInicial = "";
+    $diferenciaEntreDosChoferes = calcularDiferenciaUsuarios($values, $chofer, $usuario);
+
+    $getDataInicial = [];
     if (isset($_GET['filtrar']) && is_numeric($_GET['filtrar'])) {
         $filtro = intval($_GET['filtrar']); // Convertir a entero
 
         if ($filtro == -2) {
+            // echo "filtro1" . $filtro . "\n";
             $filtro = 20;
             $getDataInicial = obtenerRegistrosSegunChofer($values, $filtro, 'last20', '');
         } elseif ($filtro < 0) {
-            $filtro = count($values); // Valor negativo distinto de -2
+            $filtro = end($values)[0]; // Valor negativo distinto de -2
+            // echo "filtro2" . $filtro . "\n";
             $getDataInicial = obtenerRegistrosSegunChofer($values, $filtro, $valorCookie, '');
         } else {
+            // echo "filtro3" . $filtro . "\n";
             $getDataInicial = obtenerRegistrosSegunChofer($values, $filtro, $valorCookie, '');
         }
     } else {
+        // echo "filtro4" . $filtro . "\n";
         $filtro = 10; // Si no se proporciona o no es un número válido
         $getDataInicial = obtenerRegistrosSegunChofer($values, $filtro, $valorCookie, '');
     }
 
-    $diferenciaEntreDosChoferes = calcularDiferenciaUsuarios($values, $chofer, $usuario);
-
     if (isset($diferenciaEntreDosChoferes['diferencia'])) {
-        $diferencia = $diferenciaEntreDosChoferes['diferencia'];
-        $getDataInicial = obtenerRegistrosSegunChofer($values, $diferencia, $valorCookie, 'diferencia');
+        $filtro = $diferenciaEntreDosChoferes['filtro'];
+        // echo "filtro5:" . $filtro . "\n";
+        $getDataInicial = obtenerRegistrosSegunChofer($values, $filtro, $valorCookie, 'diferencia');
     }
 
     $usuariosCercanos = $getDataInicial;
-    $encuentraChofer = encuentraChofer($values, $valorCookie);
+
+    $findDriverIndex = findDriverIndex($values, $valorCookie);
     $listaChoferes = obtenerNombresSinRepetir($values);
 
     if (empty($values)) {
@@ -96,117 +100,110 @@ try {
 function limpiarYAjustarValores($response)
 {
     $values = [];
-    $currentEmptyCells = 0; // Contador de celdas vacías al inicio
-    foreach ($response as $row) {
-        if (empty($row[0])) {
-            $currentEmptyCells++;
-        } else {
-            for ($i = 0; $i < $currentEmptyCells; $i++) {
-                $values[] = array(
-                    '', // Índice vacío
-                    '', // Nombre de usuario vacío
-                );
-            }
-            $currentEmptyCells = 0;
+    $index = null; // Inicializar el índice en null
+    $currentIndex = 1; // Inicializar el índice actual en 1
 
-            if (isset($row[1]) && trim($row[1]) !== '') {
-                $values[] = array(
-                    isset($row[0]) ? trim($row[0]) : '',
-                    trim($row[1]), // Limpiar el nombre de usuario
-                );
-            }
+    foreach ($response as $row) {
+        if ($index === null && isset($row[1]) && trim($row[1]) !== '') {
+            $index = $currentIndex; // Establecer el índice
         }
+
+        if (isset($row[1]) && trim($row[1]) !== '') {
+            $values[] = array(
+                $index,
+                isset($row[0]) ? trim($row[0]) : '',
+                trim($row[1]), // Limpiar el nombre de usuario
+            );
+            $index++; // Incrementar el índice
+        }
+
+        $currentIndex++; // Incrementar el índice actual en cada iteración
     }
 
     return $values;
 }
 
-function encuentraChofer($values, $chofer)
+function findDriverIndex(array $data, string $driver): int
 {
-    $lastTrueIndex = -1;
+    $driverIndex = -1;
 
-    for ($i = count($values) - 1; $i >= 0; $i--) {
-        if (isset($values[$i][1]) && $values[$i][1] === $chofer) {
-            $lastTrueIndex = $i;
+    foreach ($data as $value) {
+        if (isset($value[2]) && $value[2] === $driver) {
+            $driverIndex = $value[0];
             break;
         }
     }
 
-    return $lastTrueIndex;
+    return $driverIndex;
 }
 
 function obtenerRegistrosSegunChofer($values, $filtro = 10, $chofer, $diferencia)
 {
-    $lastTrueIndex = $chofer == 'last20' ? count($values) :   encuentraChofer($values, $chofer);
-    if ($lastTrueIndex == -1) {
-        for ($i = count($values) - 1; $i >= 0; $i--) {
-            if ((isset($values[$i][0]) && $values[$i][0] === "TRUE")) {
-                $lastTrueIndex = $i + 1;
-                break;
-            }
-        }
 
-        return upAndDown($values, $filtro,  $lastTrueIndex, $diferencia);
-    } else {
+    if ($chofer != "last20") {
 
-        if (isset($values[$lastTrueIndex][0]) && $values[$lastTrueIndex][0] === "TRUE") {
-            for ($i = count($values) - 1; $i >= 0; $i--) {
-                if ((isset($values[$i][0]) && $values[$i][0] === "TRUE")) {
-                    $lastTrueIndex = $i + 1;
+        $driverIndex = findDriverIndex($values, $chofer);
+        $lastTrueIndex = "";
+        if ($driverIndex == -1) {
+            for ($i = end($values)[0] - 1; $i >= 0; $i--) {
+                if (isset($values[$i][1]) && $values[$i][1] === "TRUE") {
+                    $lastTrueIndex = $values[$i][0] + 1;
                     break;
                 }
             }
-            return upAndDown($values, $filtro, $lastTrueIndex, $diferencia);
         } else {
-            return upAndDown($values, $filtro, $lastTrueIndex, $diferencia);
+            for ($i = end($values)[0] - 1; $i >= 0; $i--) {
+                if (isset($values[$i][1]) && $values[$i][1] === "TRUE") {
+                    $lastTrueIndex = $values[$i][0] + 1;
+                    break;
+                }
+            }
         }
+
+        $result = upAndDown($values, $filtro, $lastTrueIndex, $diferencia);
+    } else {
+
+        $result = upAndDown($values, $filtro, end($values)[0], $diferencia);
     }
+
+    return $result;
 }
 
 function upAndDown($values, $filtro, $lastTrueIndex, $diferencia)
 {
-    $valores_total = [];
+    $valoresTotal = [];
 
-    for ($i = max(0, $lastTrueIndex - $filtro); $i <= $lastTrueIndex - 1; $i++) {
+
+    for ($i = max(0, $lastTrueIndex - $filtro) - 1; $i <= $lastTrueIndex - 1; $i++) {
         if (isset($values[$i][0]) && isset($values[$i][1])) {
-            $valores_total[] = [
-                'indice' => $i + 2,
-                'dato1' => $values[$i][0],
-                'dato2' => $values[$i][1],
+            $valoresTotal[] = [
+                'indice' => $values[$i][0],
+                'dato1' => $values[$i][1],
+                'dato2' => $values[$i][2],
             ];
         }
     }
-    if ($diferencia == "") {
 
-        for ($i = $lastTrueIndex; $i < min(count($values), $lastTrueIndex + $filtro); $i++) {
-            if (isset($values[$i][0]) && isset($values[$i][1])) {
-                $valores_total[] = [
-                    'indice' => $i + 2,
-                    'dato1' => $values[$i][0],
-                    'dato2' => $values[$i][1],
-                ];
-            }
-        }
-    } else {
-        for ($i = $lastTrueIndex; $i < min(count($values), $lastTrueIndex + 5); $i++) {
-            if (isset($values[$i][0]) && isset($values[$i][1])) {
-                $valores_total[] = [
-                    'indice' => $i + 2,
-                    'dato1' => $values[$i][0],
-                    'dato2' => $values[$i][1],
-                ];
-            }
+    $endIndex = min(end($values)[0], $lastTrueIndex + ($diferencia == "" ? $filtro : 5));
+    for ($i = $lastTrueIndex; $i < $endIndex; $i++) {
+
+        if (isset($values[$i][0]) && isset($values[$i][1])) {
+            $valoresTotal[] = [
+                'indice' => $values[$i][0],
+                'dato1' => $values[$i][1],
+                'dato2' => $values[$i][2],
+            ];
         }
     }
-    return $valores_total;
+    return $valoresTotal;
 }
 function obtenerNombresSinRepetir($values)
 {
     $nombresSinRepetir = array();
 
     foreach ($values as $row) {
-        if (isset($row[1])) {
-            $nombre = trim($row[1]);
+        if (isset($row[2])) {
+            $nombre = trim($row[2]);
             if (!empty($nombre) && !in_array($nombre, $nombresSinRepetir)) {
                 $nombresSinRepetir[] = $nombre;
             }
@@ -224,13 +221,14 @@ function calcularDiferenciaUsuarios($values, $choferInicial, $usuario)
     $indiceChoferInicial = -1;
     $indiceUsuario = -1;
 
-    for ($i = count($values) - 1; $i >= 0; $i--) {
-        if ($indiceChoferInicial === -1 && isset($values[$i][1]) && $values[$i][1] === $choferInicial) {
-            $indiceChoferInicial = $i + 1;
+    for ($i = end($values)[0] - 1; $i >= 0; $i--) {
+        if ($indiceChoferInicial === -1 && isset($values[$i][2]) && $values[$i][2] === $choferInicial) {
+            $indiceChoferInicial = $values[$i][0];
+            $choferInicialValue = $values[$i][1];
         }
 
-        if ($indiceUsuario === -1 && isset($values[$i][1]) && $values[$i][1] === $usuario) {
-            $indiceUsuario = $i + 1;
+        if ($indiceUsuario === -1 && isset($values[$i][2]) && $values[$i][2] === $usuario) {
+            $indiceUsuario = $values[$i][0];
         }
 
         if ($indiceChoferInicial !== -1 && $indiceUsuario !== -1) {
@@ -240,13 +238,19 @@ function calcularDiferenciaUsuarios($values, $choferInicial, $usuario)
 
     if ($indiceChoferInicial !== -1 && $indiceUsuario !== -1) {
         $diferencia = abs($indiceUsuario - $indiceChoferInicial);
+
+        // Obtener el valor de choferInicial (true o false) desde $values
+
+        $filtro = $choferInicialValue === "TRUE" ? $diferencia + 10  : $diferencia + 5;
+
         if ($indiceUsuario > $indiceChoferInicial) {
             return;
         } else {
             return array(
-                "diferencia" => $diferencia + 1,
+                "diferencia" => $diferencia,
+                "filtro" => $filtro,
                 "choferInicial" => array("indice" => $indiceChoferInicial, "nombre" => $choferInicial),
-                "usuario" => array("indice" => $indiceUsuario, "nombre" => $usuario)
+                "usuario" => array("indice" => $indiceUsuario, "nombre" => $usuario),
             );
         }
     } else {

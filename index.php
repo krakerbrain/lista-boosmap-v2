@@ -18,10 +18,10 @@ if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
     if (isset($diferenciaEntreDosChoferes["error"])) {
         echo '<div class="alert alert-danger" role="alert">' . $diferenciaEntreDosChoferes["error"] . '</div>';
     } else {
-        $diferencia = $diferenciaEntreDosChoferes["diferencia"] - 2;
-        $choferInicialIndice = $diferenciaEntreDosChoferes["choferInicial"]["indice"] + 1;
+        $diferencia = $diferenciaEntreDosChoferes["diferencia"];
+        $choferInicialIndice = $diferenciaEntreDosChoferes["choferInicial"]["indice"];
         $choferInicialNombre = $diferenciaEntreDosChoferes["choferInicial"]["nombre"];
-        $usuarioIndice = $diferenciaEntreDosChoferes["usuario"]["indice"] + 1;
+        $usuarioIndice = $diferenciaEntreDosChoferes["usuario"]["indice"];
         $usuarioNombre = $diferenciaEntreDosChoferes["usuario"]["nombre"];
 
         if ($diferencia < 10) {
@@ -46,7 +46,7 @@ if (isset($_GET['filtrar'])) {
     }
 }
 
-if ($encuentraChofer == -1) {
+if ($findDriverIndex == -1) {
     echo '<div class="alert alert-warning" role="alert"><small>Usuario no existe en la lista. Revisar el nombre de usuario o verificar si fue agregado</small></div>';
 }
 ?>
