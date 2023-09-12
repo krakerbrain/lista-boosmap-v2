@@ -1,4 +1,6 @@
 /credentials
 .env
 trash.php
-*.json
+datos.json
+_trash
+*copy.*

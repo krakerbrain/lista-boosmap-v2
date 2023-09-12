@@ -3,15 +3,14 @@ require 'src/app.php';
 require 'partials/header.php';
 require 'partials/form.php'
 ?>
-
 <style>
-    /* Establecer la altura fija de la tabla */
-    .fixed-height-table {
-        max-height: 500px;
-        /* Ajusta la altura según tus necesidades */
-        overflow-y: auto;
-        /* Agrega una barra de desplazamiento vertical si es necesario */
-    }
+/* Establecer la altura fija de la tabla */
+.fixed-height-table {
+    max-height: 500px;
+    /* Ajusta la altura según tus necesidades */
+    overflow-y: auto;
+    /* Agrega una barra de desplazamiento vertical si es necesario */
+}
 </style>
 <?php
 if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
@@ -32,29 +31,23 @@ if (isset($diferenciaEntreDosChoferes) && !empty($diferenciaEntreDosChoferes)) {
             $alert = 'alert-primary';
         }
 
-        $mensajeDiferencia = "Hay {$diferencia} choferes esperando por salir entre {$usuarioIndice}.- {$usuarioNombre} y {$choferInicialIndice}.- {$choferInicialNombre}.";
+        $mensajeDiferencia = "Hay {$diferencia} choferes de diferencia entre {$usuarioIndice}.- {$usuarioNombre} y {$choferInicialIndice}.- {$choferInicialNombre}.";
         echo '<div class="alert ' . $alert . ' role="alert">' . $mensajeDiferencia . '</div>';
     }
 }
 
 //usar alert en caso de que el filtro tenga -1
-if (isset($_GET['filtrar'])) {
-    if ($_GET['filtrar'] == -1) {
-        echo '<div class="alert alert-warning" role="alert">Se muestran todos los registros</div>';
-    } else if ($_GET['filtrar'] == -2) {
-        echo '<div class="alert alert-warning" role="alert">Se muestran los últimos 20 registros</div>';
-    }
-}
-
-if ($findDriverIndex == -1) {
-    echo '<div class="alert alert-warning" role="alert"><small>Usuario no existe en la lista. Revisar el nombre de usuario o verificar si fue agregado</small></div>';
+if (isset($_GET['filtrar']) && $_GET['filtrar'] == -1) {
+    echo '<div class="alert alert-warning" role="alert">Se muestran todos los registros</div>';
+}else if(isset($_GET['filtrar']) && $_GET['filtrar'] == -2){
+    echo '<div class="alert alert-warning" role="alert">Se muestran todos los últimos 20 registros</div>';
 }
 ?>
 
 <div class="fixed-height-table">
     <table class="table table-striped table-sm">
         <tbody>
-            <?php if (isset($usuariosCercanos) && !empty($usuariosCercanos)) {
+            <?php if (isset($usuariosCercanos)) {
                 foreach ($usuariosCercanos as $row) {
                     $icon = $row['dato1'] == 'TRUE' ? '<i class="fa-solid fa-square-check"></i>' : '<i class="fa-solid fa-square"></i>';
                     // Verificar si el usuario en la fila actual es el usuario seleccionado
@@ -68,10 +61,9 @@ if ($findDriverIndex == -1) {
                     }
                 }
             } else {
-                echo "<p>No se pudieron obtener los datos. Revisar el nombre del usuario</p>";
+                echo "<p>No se pudieron obtener los datos.</p>";
             } ?>
         </tbody>
     </table>
 </div>
-
 <?php require 'partials/footer.php'; ?>
